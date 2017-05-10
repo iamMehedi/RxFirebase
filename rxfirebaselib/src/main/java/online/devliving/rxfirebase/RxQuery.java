@@ -18,11 +18,23 @@ import rx.subscriptions.Subscriptions;
  */
 
 public final class RxQuery {
+    /**
+     * use when the reference/query points to an object; if it points to a list the whole list will be emitted as a whole
+     * @param query
+     * @param clazz
+     * @param <T>
+     * @return Observable that emits the value of the {@param query} once and completes
+     */
     public static <T> Observable<T> observeSingleValue(Query query, Class<T> clazz){
         return observeRefSingle(query)
                 .map(dataSnapshot -> dataSnapshot.getValue(clazz));
     }
 
+    /**
+     * use when the reference/query points to an object; if it points to a list the whole list will be emitted as a whole
+     * @param query
+     * @return Observable that emits the value of the {@param query} once and completes
+     */
     public static Observable<DataSnapshot> observeRefSingle(Query query){
         return Observable.create(subscriber -> {
             ValueEventListener listener = new ValueEventListener() {
@@ -56,6 +68,11 @@ public final class RxQuery {
         });
     }
 
+    /**
+     * use when the reference/query points to an object; if it points to a list the whole list will be emitted as a whole
+     * @param query
+     * @return Observable that emits the value of the {@param query} once initially and then every time the value changes
+     */
     public static Observable<DataSnapshot> observeRef(Query query){
         return Observable.create(subscriber -> {
             ValueEventListener listener = new ValueEventListener() {
@@ -88,17 +105,24 @@ public final class RxQuery {
         });
     }
 
+    /**
+     * use when the reference/query points to an object; if it points to a list the whole list will be emitted as a whole
+     * @param query
+     * @param clazz
+     * @param <T>
+     * @return Observable that emits the value of the {@param query} once initially and then every time the value changes
+     */
     public static <T> Observable<T> observeValue(Query query, Class<T> clazz){
         return observeRef(query)
                 .map(dataSnapshot -> dataSnapshot.getValue(clazz));
     }
 
     /**
-     * use when the reference/query points to a list
+     * use when the reference/query points to a list, items in the list are flattened
      * @param query
      * @param clazz
      * @param <T>
-     * @return
+     * @return Observable that emits the values of the {@param query} once initially and then every time there is a value change
      */
     public static <T> Observable<T> observeValues(Query query, Class<T> clazz){
         return observeRef(query)
@@ -107,11 +131,11 @@ public final class RxQuery {
     }
 
     /**
-     * use when the reference/query points to a list
+     * use when the reference/query points to a list, items in the list are flattened
      * @param query
      * @param clazz
      * @param <T>
-     * @return
+     * @return Observable that emits the values of the {@param query} once and completes
      */
     public static <T> Observable<T> observeValuesSingle(Query query, Class<T> clazz){
         return observeRefSingle(query)
@@ -119,6 +143,13 @@ public final class RxQuery {
                 .map(dataSnapshot -> dataSnapshot.getValue(clazz));
     }
 
+    /**
+     * Observe child value change events. Check {@see FIRChildEvent.type} for the type of event.
+     * @param query
+     * @param clazz
+     * @param <T>
+     * @return
+     */
     public static <T> Observable<FIRChildEvent<T>> observeChildValue(Query query, Class<T> clazz){
         return Observable.create(subscriber -> {
             ChildEventListener eventListener = new ChildEventListener() {
@@ -164,7 +195,14 @@ public final class RxQuery {
         });
     }
 
+    /**
+     * Defines a child value change event
+     * @param <T>
+     */
     public static class FIRChildEvent<T>{
+        /**
+         * Types of value change event
+         */
         enum ChilcEventType{
             ADD,
             REMOVE,
@@ -172,8 +210,17 @@ public final class RxQuery {
             MOVE
         };
 
+        /**
+         * Changed value
+         */
         T value;
+        /**
+         * key for the child
+         */
         @Nullable String childName;
+        /**
+         * Type of the event
+         */
         ChilcEventType type;
 
         public FIRChildEvent(T value, String childName, ChilcEventType type) {
