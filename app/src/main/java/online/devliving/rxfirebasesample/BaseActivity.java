@@ -16,10 +16,14 @@ public class BaseActivity extends RxAppCompatActivity {
     private ProgressDialog mProgressDialog;
 
     public void showProgressDialog() {
+        showProgressDialog("loading...");
+    }
+
+    public void showProgressDialog(String message) {
         if (mProgressDialog == null) {
             mProgressDialog = new ProgressDialog(this);
             mProgressDialog.setCancelable(false);
-            mProgressDialog.setMessage("Loading...");
+            mProgressDialog.setMessage(message);
         }
 
         mProgressDialog.show();

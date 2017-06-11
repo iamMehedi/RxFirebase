@@ -3,17 +3,12 @@ package online.devliving.rxfirebasesample;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
-import android.widget.Toast;
 
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseException;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.Query;
-import com.google.firebase.database.ValueEventListener;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -23,6 +18,8 @@ import online.devliving.rxfirebase.RxQuery;
 import online.devliving.rxfirebasesample.models.Post;
 import online.devliving.rxfirebasesample.models.User;
 import rx.Observable;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
 
 public class NewPostActivity extends BaseActivity {
 
@@ -76,44 +73,29 @@ public class NewPostActivity extends BaseActivity {
 
         // Disable button so there are no multi-posts
         setEditingEnabled(false);
-        Toast.makeText(this, "Posting...", Toast.LENGTH_SHORT).show();
+        showProgressDialog("posting...");
 
-        // [START single_value_read]
-        final String userId = getUid();
-        mDatabase.child("users").child(userId).addListenerForSingleValueEvent(
-                new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        // Get user value
-                        User user = dataSnapshot.getValue(User.class);
-
-                        // [START_EXCLUDE]
-                        if (user == null) {
-                            // User is null, error out
-                            Log.e(TAG, "User " + userId + " is unexpectedly null");
-                            Toast.makeText(NewPostActivity.this,
-                                    "Error: could not fetch user.",
-                                    Toast.LENGTH_SHORT).show();
-                        } else {
-                            // Write new post
-                            writeNewPost(userId, user.username, title, body);
-                        }
-
-                        // Finish this Activity, back to the stream
-                        setEditingEnabled(true);
-                        finish();
-                        // [END_EXCLUDE]
+        getUser()
+                .flatMap(user -> {
+                    if(user == null) return Observable.error(new DatabaseException("user not found"));
+                    else {
+                        String uid = getUid();
+                        return writeNewPost(uid, user.username, title, body);
                     }
-
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) {
-                        Log.w(TAG, "getUser:onCancelled", databaseError.toException());
-                        // [START_EXCLUDE]
-                        setEditingEnabled(true);
-                        // [END_EXCLUDE]
-                    }
-                });
-        // [END single_value_read]
+                })
+                .compose(bindToLifecycle())
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(done -> finish(),
+                        error -> {
+                            hideProgressDialog();
+                            showToast("Error: " + error.getMessage());
+                            setEditingEnabled(true);
+                        },
+                        () -> {
+                            hideProgressDialog();
+                            setEditingEnabled(true);
+                        });
     }
 
     private void setEditingEnabled(boolean enabled) {
