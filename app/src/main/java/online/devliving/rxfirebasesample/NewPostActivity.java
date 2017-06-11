@@ -12,12 +12,17 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
-import com.google.firebase.quickstart.database.models.Post;
-import com.google.firebase.quickstart.database.models.User;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import online.devliving.rxfirebase.RxGMSTask;
+import online.devliving.rxfirebase.RxQuery;
+import online.devliving.rxfirebasesample.models.Post;
+import online.devliving.rxfirebasesample.models.User;
+import rx.Observable;
 
 public class NewPostActivity extends BaseActivity {
 
@@ -121,19 +126,30 @@ public class NewPostActivity extends BaseActivity {
         }
     }
 
+    private Observable<User> getUser(){
+        return getUserRef()
+                .flatMap(userRef -> RxQuery.observeSingleValue(userRef, User.class));
+    }
+
+    private Observable<Map<String, Object>> buildPostData(String userId, String username, String title, String body){
+        return Observable.fromCallable(() -> {
+            // Create new post at /user-posts/$userid/$postid and at
+            // /posts/$postid simultaneously
+            String key = mDatabase.child("posts").push().getKey();
+            Post post = new Post(userId, username, title, body);
+            Map<String, Object> postValues = post.toMap();
+
+            Map<String, Object> childUpdates = new HashMap<>();
+            childUpdates.put("/posts/" + key, postValues);
+            childUpdates.put("/user-posts/" + userId + "/" + key, postValues);
+
+            return childUpdates;
+        });
+    }
     // [START write_fan_out]
-    private void writeNewPost(String userId, String username, String title, String body) {
-        // Create new post at /user-posts/$userid/$postid and at
-        // /posts/$postid simultaneously
-        String key = mDatabase.child("posts").push().getKey();
-        Post post = new Post(userId, username, title, body);
-        Map<String, Object> postValues = post.toMap();
-
-        Map<String, Object> childUpdates = new HashMap<>();
-        childUpdates.put("/posts/" + key, postValues);
-        childUpdates.put("/user-posts/" + userId + "/" + key, postValues);
-
-        mDatabase.updateChildren(childUpdates);
+    private Observable<Void> writeNewPost(String userId, String username, String title, String body) {
+        return buildPostData(userId, username, title, body)
+                .flatMap(dataMap -> RxGMSTask.just(mDatabase.updateChildren(dataMap)));
     }
     // [END write_fan_out]
 }

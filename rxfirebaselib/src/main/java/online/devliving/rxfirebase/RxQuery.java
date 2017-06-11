@@ -9,6 +9,9 @@ import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
 import rx.Observable;
+import rx.Subscriber;
+import rx.functions.Action0;
+import rx.functions.Func1;
 import rx.subscriptions.Subscriptions;
 
 /**
@@ -27,7 +30,12 @@ public final class RxQuery {
      */
     public static <T> Observable<T> observeSingleValue(Query query, Class<T> clazz){
         return observeRefSingle(query)
-                .map(dataSnapshot -> dataSnapshot.getValue(clazz));
+                .map(new Func1<DataSnapshot, T>() {
+                    @Override
+                    public T call(DataSnapshot dataSnapshot) {
+                        return dataSnapshot.getValue(clazz);
+                    }
+                });
     }
 
     /**
@@ -36,35 +44,43 @@ public final class RxQuery {
      * @return Observable that emits the value of the {@param query} once and completes
      */
     public static Observable<DataSnapshot> observeRefSingle(Query query){
-        return Observable.create(subscriber -> {
-            ValueEventListener listener = new ValueEventListener() {
-                @Override
-                public void onDataChange(DataSnapshot dataSnapshot) {
-                    try {
-                        if(!subscriber.isUnsubscribed()){
-                            subscriber.onNext(dataSnapshot);
-                            subscriber.onCompleted();
+        return Observable.create(new Observable.OnSubscribe<DataSnapshot>() {
+            @Override
+            public void call(Subscriber<? super DataSnapshot> subscriber) {
+                ValueEventListener listener = new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        try {
+                            if(!subscriber.isUnsubscribed()){
+                                subscriber.onNext(dataSnapshot);
+                                subscriber.onCompleted();
+                            }
+                        }catch (Exception e) {
+                            sendError(e);
                         }
-                    }catch (Exception e) {
-                        sendError(e);
                     }
-                }
 
-                @Override
-                public void onCancelled(DatabaseError databaseError) {
-                    sendError(databaseError.toException());
-                }
-
-                void sendError(Throwable error){
-                    if(!subscriber.isUnsubscribed()){
-                        subscriber.onError(error);
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+                        sendError(databaseError.toException());
                     }
-                }
-            };
 
-            query.addListenerForSingleValueEvent(listener);
+                    void sendError(Throwable error){
+                        if(!subscriber.isUnsubscribed()){
+                            subscriber.onError(error);
+                        }
+                    }
+                };
 
-            subscriber.add(Subscriptions.create(() -> query.removeEventListener(listener)));
+                query.addListenerForSingleValueEvent(listener);
+
+                subscriber.add(Subscriptions.create(new Action0() {
+                    @Override
+                    public void call() {
+                        query.removeEventListener(listener);
+                    }
+                }));
+            }
         });
     }
 
@@ -74,34 +90,42 @@ public final class RxQuery {
      * @return Observable that emits the value of the {@param query} once initially and then every time the value changes
      */
     public static Observable<DataSnapshot> observeRef(Query query){
-        return Observable.create(subscriber -> {
-            ValueEventListener listener = new ValueEventListener() {
-                @Override
-                public void onDataChange(DataSnapshot dataSnapshot) {
-                    try {
-                        if(!subscriber.isUnsubscribed()){
-                            subscriber.onNext(dataSnapshot);
+        return Observable.create(new Observable.OnSubscribe<DataSnapshot>() {
+            @Override
+            public void call(Subscriber<? super DataSnapshot> subscriber) {
+                ValueEventListener listener = new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        try {
+                            if(!subscriber.isUnsubscribed()){
+                                subscriber.onNext(dataSnapshot);
+                            }
+                        }catch (Exception e) {
+                            sendError(e);
                         }
-                    }catch (Exception e) {
-                        sendError(e);
                     }
-                }
 
-                @Override
-                public void onCancelled(DatabaseError databaseError) {
-                    sendError(databaseError.toException());
-                }
-
-                void sendError(Throwable error){
-                    if(!subscriber.isUnsubscribed()){
-                        subscriber.onError(error);
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+                        sendError(databaseError.toException());
                     }
-                }
-            };
 
-            query.addValueEventListener(listener);
+                    void sendError(Throwable error){
+                        if(!subscriber.isUnsubscribed()){
+                            subscriber.onError(error);
+                        }
+                    }
+                };
 
-            subscriber.add(Subscriptions.create(() -> query.removeEventListener(listener)));
+                query.addValueEventListener(listener);
+
+                subscriber.add(Subscriptions.create(new Action0() {
+                    @Override
+                    public void call() {
+                        query.removeEventListener(listener);
+                    }
+                }));
+            }
         });
     }
 
@@ -114,7 +138,12 @@ public final class RxQuery {
      */
     public static <T> Observable<T> observeValue(Query query, Class<T> clazz){
         return observeRef(query)
-                .map(dataSnapshot -> dataSnapshot.getValue(clazz));
+                .map(new Func1<DataSnapshot, T>() {
+                    @Override
+                    public T call(DataSnapshot dataSnapshot) {
+                        return dataSnapshot.getValue(clazz);
+                    }
+                });
     }
 
     /**
@@ -126,8 +155,18 @@ public final class RxQuery {
      */
     public static <T> Observable<T> observeValues(Query query, Class<T> clazz){
         return observeRef(query)
-                .flatMap(dataSnapshot -> Observable.from(dataSnapshot.getChildren()))
-                .map(dataSnapshot -> dataSnapshot.getValue(clazz));
+                .flatMap(new Func1<DataSnapshot, Observable<DataSnapshot>>() {
+                    @Override
+                    public Observable<DataSnapshot> call(DataSnapshot dataSnapshot) {
+                        return Observable.from(dataSnapshot.getChildren());
+                    }
+                })
+                .map(new Func1<DataSnapshot, T>() {
+                    @Override
+                    public T call(DataSnapshot dataSnapshot) {
+                        return dataSnapshot.getValue(clazz);
+                    }
+                });
     }
 
     /**
@@ -139,8 +178,18 @@ public final class RxQuery {
      */
     public static <T> Observable<T> observeValuesSingle(Query query, Class<T> clazz){
         return observeRefSingle(query)
-                .flatMap(dataSnapshot -> Observable.from(dataSnapshot.getChildren()))
-                .map(dataSnapshot -> dataSnapshot.getValue(clazz));
+                .flatMap(new Func1<DataSnapshot, Observable<DataSnapshot>>() {
+                    @Override
+                    public Observable<DataSnapshot> call(DataSnapshot dataSnapshot) {
+                        return Observable.from(dataSnapshot.getChildren());
+                    }
+                })
+                .map(new Func1<DataSnapshot, T>() {
+                    @Override
+                    public T call(DataSnapshot dataSnapshot) {
+                        return dataSnapshot.getValue(clazz);
+                    }
+                });
     }
 
     /**
@@ -151,47 +200,55 @@ public final class RxQuery {
      * @return
      */
     public static <T> Observable<FIRChildEvent<T>> observeChildValue(Query query, Class<T> clazz){
-        return Observable.create(subscriber -> {
-            ChildEventListener eventListener = new ChildEventListener() {
-                @Override
-                public void onChildAdded(DataSnapshot dataSnapshot, String s) {
-                    if(!subscriber.isUnsubscribed()){
-                        subscriber.onNext(new FIRChildEvent<T>(dataSnapshot.getValue(clazz), s, FIRChildEvent.ChilcEventType.ADD));
+        return Observable.create(new Observable.OnSubscribe<FIRChildEvent<T>>() {
+            @Override
+            public void call(Subscriber<? super FIRChildEvent<T>> subscriber) {
+                ChildEventListener eventListener = new ChildEventListener() {
+                    @Override
+                    public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                        if(!subscriber.isUnsubscribed()){
+                            subscriber.onNext(new FIRChildEvent<T>(dataSnapshot.getValue(clazz), s, FIRChildEvent.ChilcEventType.ADD));
+                        }
                     }
-                }
 
-                @Override
-                public void onChildChanged(DataSnapshot dataSnapshot, String s) {
-                    if(!subscriber.isUnsubscribed()){
-                        subscriber.onNext(new FIRChildEvent<T>(dataSnapshot.getValue(clazz), s, FIRChildEvent.ChilcEventType.CHANGE));
+                    @Override
+                    public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+                        if(!subscriber.isUnsubscribed()){
+                            subscriber.onNext(new FIRChildEvent<T>(dataSnapshot.getValue(clazz), s, FIRChildEvent.ChilcEventType.CHANGE));
+                        }
                     }
-                }
 
-                @Override
-                public void onChildRemoved(DataSnapshot dataSnapshot) {
-                    if(!subscriber.isUnsubscribed()){
-                        subscriber.onNext(new FIRChildEvent<T>(dataSnapshot.getValue(clazz), null, FIRChildEvent.ChilcEventType.REMOVE));
+                    @Override
+                    public void onChildRemoved(DataSnapshot dataSnapshot) {
+                        if(!subscriber.isUnsubscribed()){
+                            subscriber.onNext(new FIRChildEvent<T>(dataSnapshot.getValue(clazz), null, FIRChildEvent.ChilcEventType.REMOVE));
+                        }
                     }
-                }
 
-                @Override
-                public void onChildMoved(DataSnapshot dataSnapshot, String s) {
-                    if(!subscriber.isUnsubscribed()){
-                        subscriber.onNext(new FIRChildEvent<T>(dataSnapshot.getValue(clazz), s, FIRChildEvent.ChilcEventType.MOVE));
+                    @Override
+                    public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+                        if(!subscriber.isUnsubscribed()){
+                            subscriber.onNext(new FIRChildEvent<T>(dataSnapshot.getValue(clazz), s, FIRChildEvent.ChilcEventType.MOVE));
+                        }
                     }
-                }
 
-                @Override
-                public void onCancelled(DatabaseError databaseError) {
-                    if(!subscriber.isUnsubscribed()){
-                        subscriber.onError(databaseError.toException());
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+                        if(!subscriber.isUnsubscribed()){
+                            subscriber.onError(databaseError.toException());
+                        }
                     }
-                }
-            };
+                };
 
-            query.addChildEventListener(eventListener);
+                query.addChildEventListener(eventListener);
 
-            subscriber.add(Subscriptions.create(() -> query.removeEventListener(eventListener)));
+                subscriber.add(Subscriptions.create(new Action0() {
+                    @Override
+                    public void call() {
+                        query.removeEventListener(eventListener);
+                    }
+                }));
+            }
         });
     }
 

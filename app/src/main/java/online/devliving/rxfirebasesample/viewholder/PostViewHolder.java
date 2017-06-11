@@ -5,8 +5,9 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.google.firebase.quickstart.database.R;
-import com.google.firebase.quickstart.database.models.Post;
+import online.devliving.rxfirebasesample.R;
+import online.devliving.rxfirebasesample.models.Post;
+
 
 public class PostViewHolder extends RecyclerView.ViewHolder {
 

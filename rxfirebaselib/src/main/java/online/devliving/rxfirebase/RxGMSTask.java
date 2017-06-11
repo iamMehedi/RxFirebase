@@ -1,8 +1,13 @@
 package online.devliving.rxfirebase;
 
+import android.support.annotation.NonNull;
+
+import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
 
 import rx.Observable;
+import rx.Subscriber;
+import rx.functions.Func0;
 
 /**
  * Created by Mehedi Hasan Khan <mehedi.mailing@gmail.com> on 2/1/17.
@@ -20,22 +25,29 @@ public final class RxGMSTask {
      * @return
      */
     static <T> Observable<T> just(Task<T> task, boolean nullable){
-        return Observable.create(sub -> {
-            task.continueWith(t -> {
-                if(sub.isUnsubscribed()) return null;
+        return Observable.create(new Observable.OnSubscribe<T>() {
+            @Override
+            public void call(Subscriber<? super T> sub) {
+                task.continueWith(new Continuation<T, T>() {
 
-                if(t.isSuccessful()){
-                    T  result = t.getResult();
-                    if(result != null || nullable) sub.onNext(result);
+                    @Override
+                    public T then(@NonNull Task<T> t) throws Exception {
+                        if(sub.isUnsubscribed()) return null;
 
-                    sub.onCompleted();
-                }
-                else{
-                    sub.onError(task.getException());
-                }
+                        if(t.isSuccessful()){
+                            T  result = t.getResult();
+                            if(result != null || nullable) sub.onNext(result);
 
-                return null;
-            });
+                            sub.onCompleted();
+                        }
+                        else{
+                            sub.onError(task.getException());
+                        }
+
+                        return null;
+                    }
+                });
+            }
         });
     }
 
@@ -66,7 +78,12 @@ public final class RxGMSTask {
      * @return
      */
     public static <T> Observable<T> defer(Task<T> task){
-        return Observable.defer(() -> just(task));
+        return Observable.defer(new Func0<Observable<T>>() {
+            @Override
+            public Observable<T> call() {
+                return just(task);
+            }
+        });
     }
 
     /**
@@ -76,6 +93,11 @@ public final class RxGMSTask {
      * @return
      */
     public static <T> Observable<T> deferNonNullable(Task<T> task){
-        return Observable.defer(() -> justNonNullable(task));
+        return Observable.defer(new Func0<Observable<T>>() {
+            @Override
+            public Observable<T> call() {
+                return justNonNullable(task);
+            }
+        });
     }
 }

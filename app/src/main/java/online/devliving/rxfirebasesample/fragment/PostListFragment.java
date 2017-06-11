@@ -19,10 +19,11 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.MutableData;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.Transaction;
-import com.google.firebase.quickstart.database.PostDetailActivity;
-import com.google.firebase.quickstart.database.R;
-import com.google.firebase.quickstart.database.models.Post;
-import com.google.firebase.quickstart.database.viewholder.PostViewHolder;
+
+import online.devliving.rxfirebasesample.PostDetailActivity;
+import online.devliving.rxfirebasesample.R;
+import online.devliving.rxfirebasesample.models.Post;
+import online.devliving.rxfirebasesample.viewholder.PostViewHolder;
 
 public abstract class PostListFragment extends Fragment {
 

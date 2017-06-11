@@ -27,9 +27,10 @@ import android.view.MenuItem;
 import android.view.View;
 
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.quickstart.database.fragment.MyPostsFragment;
-import com.google.firebase.quickstart.database.fragment.MyTopPostsFragment;
-import com.google.firebase.quickstart.database.fragment.RecentPostsFragment;
+
+import online.devliving.rxfirebasesample.fragment.MyPostsFragment;
+import online.devliving.rxfirebasesample.fragment.MyTopPostsFragment;
+import online.devliving.rxfirebasesample.fragment.RecentPostsFragment;
 
 public class  MainActivity extends BaseActivity {
 
