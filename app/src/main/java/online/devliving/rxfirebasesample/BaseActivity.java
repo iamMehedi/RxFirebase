@@ -4,11 +4,7 @@ import android.app.ProgressDialog;
 import android.widget.Toast;
 
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
 import com.trello.rxlifecycle.components.support.RxAppCompatActivity;
-
-import rx.Observable;
 
 
 public class BaseActivity extends RxAppCompatActivity {
@@ -45,10 +41,5 @@ public class BaseActivity extends RxAppCompatActivity {
 
     public String getUid() {
         return FirebaseAuth.getInstance().getCurrentUser().getUid();
-    }
-
-    Observable<DatabaseReference> getUserRef(){
-        return Observable.just(FirebaseDatabase.getInstance())
-                .map(fireDB -> fireDB.getReference().child("users").child(getUid()));
     }
 }

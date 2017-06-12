@@ -12,7 +12,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseException;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
@@ -20,10 +20,12 @@ import com.google.firebase.database.ValueEventListener;
 import java.util.ArrayList;
 import java.util.List;
 
+import online.devliving.rxfirebase.RxGMSTask;
 import online.devliving.rxfirebase.RxQuery;
+import online.devliving.rxfirebasesample.helpers.FirebaseHelper;
 import online.devliving.rxfirebasesample.models.Comment;
 import online.devliving.rxfirebasesample.models.Post;
-import online.devliving.rxfirebasesample.models.User;
+import rx.Observable;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
 
@@ -108,31 +110,27 @@ public class PostDetailActivity extends BaseActivity implements View.OnClickList
     }
 
     private void postComment() {
-        final String uid = getUid();
-        FirebaseDatabase.getInstance().getReference().child("users").child(uid)
-                .addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        // Get user information
-                        User user = dataSnapshot.getValue(User.class);
-                        String authorName = user.username;
+        String commentText = mCommentField.getText().toString();
+        showProgressDialog("posting...");
+        FirebaseHelper.getUser()
+                .flatMap(user -> {
+                    if(user == null) return Observable.error(new DatabaseException("user not found"));
+                    
+                    String uid = FirebaseHelper.getUid();
+                    Comment comment = new Comment(uid, user.username, commentText);
 
-                        // Create new comment object
-                        String commentText = mCommentField.getText().toString();
-                        Comment comment = new Comment(uid, authorName, commentText);
-
-                        // Push the comment, it will appear in the list
-                        mCommentsReference.push().setValue(comment);
-
-                        // Clear the field
-                        mCommentField.setText(null);
-                    }
-
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) {
-
-                    }
-                });
+                    // Push the comment, it will appear in the list
+                    return RxGMSTask.just(mCommentsReference.push().setValue(comment));
+                })
+                .compose(bindToLifecycle())
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(done -> mCommentField.setText(null),
+                        error -> {
+                            hideProgressDialog();
+                            showToast("Error: " + error.getMessage());
+                        },
+                        () -> hideProgressDialog());
     }
 
     private static class CommentViewHolder extends RecyclerView.ViewHolder {
