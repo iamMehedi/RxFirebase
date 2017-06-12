@@ -15,7 +15,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
 import online.devliving.rxfirebase.RxGMSTask;
-import online.devliving.rxfirebasesample.models.User;
+import online.devliving.rxfirebasesample.helpers.FirebaseHelper;
 import rx.Observable;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
@@ -97,7 +97,7 @@ public class SignInActivity extends BaseActivity implements View.OnClickListener
 
         RxGMSTask.defer(mAuth.createUserWithEmailAndPassword(email, password))
                 .flatMap(resutl -> {
-                    if(resutl.getUser() != null) return saveUser(resutl.getUser());
+                    if(resutl.getUser() != null) return FirebaseHelper.saveUser(resutl.getUser());
                     else return Observable.error(new FirebaseAuthException("","user not created"));
                 })
                 .compose(bindToLifecycle())
@@ -117,14 +117,6 @@ public class SignInActivity extends BaseActivity implements View.OnClickListener
         finish();
     }
 
-    private String usernameFromEmail(String email) {
-        if (email.contains("@")) {
-            return email.split("@")[0];
-        } else {
-            return email;
-        }
-    }
-
     private boolean validateForm() {
         boolean result = true;
         if (TextUtils.isEmpty(mEmailField.getText().toString())) {
@@ -142,16 +134,6 @@ public class SignInActivity extends BaseActivity implements View.OnClickListener
         }
 
         return result;
-    }
-
-    private Observable<Void> saveUser(FirebaseUser user){
-        return getUserRef()
-                .flatMap(userRef -> {
-                    String username = usernameFromEmail(user.getEmail());
-                    User dbUser = new User(username, user.getEmail());
-
-                    return RxGMSTask.just(userRef.setValue(dbUser));
-                });
     }
 
     @Override

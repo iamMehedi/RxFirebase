@@ -195,40 +195,38 @@ public final class RxQuery {
     /**
      * Observe child value change events. Check {@see FIRChildEvent.type} for the type of event.
      * @param query
-     * @param clazz
-     * @param <T>
      * @return
      */
-    public static <T> Observable<FIRChildEvent<T>> observeChildValue(Query query, Class<T> clazz){
-        return Observable.create(new Observable.OnSubscribe<FIRChildEvent<T>>() {
+    public static Observable<FIRChildEvent<DataSnapshot>> observeChild(Query query) {
+        return Observable.create(new Observable.OnSubscribe<FIRChildEvent<DataSnapshot>>() {
             @Override
-            public void call(Subscriber<? super FIRChildEvent<T>> subscriber) {
+            public void call(Subscriber<? super FIRChildEvent<DataSnapshot>> subscriber) {
                 ChildEventListener eventListener = new ChildEventListener() {
                     @Override
                     public void onChildAdded(DataSnapshot dataSnapshot, String s) {
                         if(!subscriber.isUnsubscribed()){
-                            subscriber.onNext(new FIRChildEvent<T>(dataSnapshot.getValue(clazz), s, FIRChildEvent.ChilcEventType.ADD));
+                            subscriber.onNext(new FIRChildEvent<DataSnapshot>(dataSnapshot, s, FIRChildEvent.ChildEventType.ADD));
                         }
                     }
 
                     @Override
                     public void onChildChanged(DataSnapshot dataSnapshot, String s) {
                         if(!subscriber.isUnsubscribed()){
-                            subscriber.onNext(new FIRChildEvent<T>(dataSnapshot.getValue(clazz), s, FIRChildEvent.ChilcEventType.CHANGE));
+                            subscriber.onNext(new FIRChildEvent<DataSnapshot>(dataSnapshot, s, FIRChildEvent.ChildEventType.CHANGE));
                         }
                     }
 
                     @Override
                     public void onChildRemoved(DataSnapshot dataSnapshot) {
                         if(!subscriber.isUnsubscribed()){
-                            subscriber.onNext(new FIRChildEvent<T>(dataSnapshot.getValue(clazz), null, FIRChildEvent.ChilcEventType.REMOVE));
+                            subscriber.onNext(new FIRChildEvent<DataSnapshot>(dataSnapshot, null, FIRChildEvent.ChildEventType.REMOVE));
                         }
                     }
 
                     @Override
                     public void onChildMoved(DataSnapshot dataSnapshot, String s) {
                         if(!subscriber.isUnsubscribed()){
-                            subscriber.onNext(new FIRChildEvent<T>(dataSnapshot.getValue(clazz), s, FIRChildEvent.ChilcEventType.MOVE));
+                            subscriber.onNext(new FIRChildEvent<DataSnapshot>(dataSnapshot, s, FIRChildEvent.ChildEventType.MOVE));
                         }
                     }
 
@@ -251,6 +249,22 @@ public final class RxQuery {
             }
         });
     }
+    /**
+     * Observe child value change events. Check {@see FIRChildEvent.type} for the type of event.
+     * @param query
+     * @param clazz
+     * @param <T>
+     * @return
+     */
+    public static <T> Observable<FIRChildEvent<T>> observeChildValue(Query query, Class<T> clazz){
+        return observeChild(query)
+                .map(new Func1<FIRChildEvent<DataSnapshot>, FIRChildEvent<T>>() {
+                    @Override
+                    public FIRChildEvent<T> call(FIRChildEvent<DataSnapshot> event) {
+                        return new FIRChildEvent<T>(event.value.getValue(clazz), event.childName, event.type);
+                    }
+                });
+    }
 
     /**
      * Defines a child value change event
@@ -260,7 +274,7 @@ public final class RxQuery {
         /**
          * Types of value change event
          */
-        enum ChilcEventType{
+        public enum ChildEventType{
             ADD,
             REMOVE,
             CHANGE,
@@ -278,12 +292,25 @@ public final class RxQuery {
         /**
          * Type of the event
          */
-        ChilcEventType type;
+        ChildEventType type;
 
-        public FIRChildEvent(T value, String childName, ChilcEventType type) {
+        public FIRChildEvent(T value, String childName, ChildEventType type) {
             this.value = value;
             this.childName = childName;
             this.type = type;
+        }
+
+        public T getValue() {
+            return value;
+        }
+
+        @Nullable
+        public String getChildName() {
+            return childName;
+        }
+
+        public ChildEventType getType() {
+            return type;
         }
     }
 }

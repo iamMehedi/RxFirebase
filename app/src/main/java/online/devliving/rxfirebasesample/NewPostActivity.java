@@ -15,6 +15,7 @@ import java.util.Map;
 
 import online.devliving.rxfirebase.RxGMSTask;
 import online.devliving.rxfirebase.RxQuery;
+import online.devliving.rxfirebasesample.helpers.FirebaseHelper;
 import online.devliving.rxfirebasesample.models.Post;
 import online.devliving.rxfirebasesample.models.User;
 import rx.Observable;
@@ -75,7 +76,7 @@ public class NewPostActivity extends BaseActivity {
         setEditingEnabled(false);
         showProgressDialog("posting...");
 
-        getUser()
+        FirebaseHelper.getUser()
                 .flatMap(user -> {
                     if(user == null) return Observable.error(new DatabaseException("user not found"));
                     else {
@@ -106,11 +107,6 @@ public class NewPostActivity extends BaseActivity {
         } else {
             mSubmitButton.setVisibility(View.GONE);
         }
-    }
-
-    private Observable<User> getUser(){
-        return getUserRef()
-                .flatMap(userRef -> RxQuery.observeSingleValue(userRef, User.class));
     }
 
     private Observable<Map<String, Object>> buildPostData(String userId, String username, String title, String body){
