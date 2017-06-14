@@ -1,3 +1,4 @@
+[ ![Download](https://api.bintray.com/packages/iammehedi/Maven/online.devliving%3Arxfirebase/images/download.svg) ](https://bintray.com/iammehedi/Maven/online.devliving%3Arxfirebase/_latestVersion)
 # RxFirebase
 A simple library that provides utilities to use Firebase SDK in a reactive fashion. Currently supports RxJava 1, version for RxJava 2 is coming soon!
 
@@ -14,7 +15,7 @@ A simple library that provides utilities to use Firebase SDK in a reactive fashi
 ```
 ### Gradle
 ```xml
-compile 'online.devliving:rxfirebaselib:1.0.0'
+compile 'online.devliving:rxfirebaselib:LATEST_VERSION'
 ```
 ## Usage
 Turn a `Task` into an `Observable` using `RxGMSTask` utility
