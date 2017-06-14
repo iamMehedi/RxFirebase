@@ -98,7 +98,12 @@ public class  MainActivity extends BaseActivity {
             startActivity(new Intent(this, SignInActivity.class));
             finish();
             return true;
-        } else {
+        }
+        else if(i == R.id.action_profile){
+            startActivity(new Intent(this, ProfileActivity.class));
+            return true;
+        }
+        else {
             return super.onOptionsItemSelected(item);
         }
     }

@@ -37,7 +37,6 @@ public class PostDetailActivity extends BaseActivity implements View.OnClickList
 
     private DatabaseReference mPostReference;
     private DatabaseReference mCommentsReference;
-    private ValueEventListener mPostListener;
     private String mPostKey;
     private CommentAdapter mAdapter;
 
@@ -115,7 +114,7 @@ public class PostDetailActivity extends BaseActivity implements View.OnClickList
         FirebaseHelper.getUser()
                 .flatMap(user -> {
                     if(user == null) return Observable.error(new DatabaseException("user not found"));
-                    
+
                     String uid = FirebaseHelper.getUid();
                     Comment comment = new Comment(uid, user.username, commentText);
 

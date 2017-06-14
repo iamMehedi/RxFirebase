@@ -109,6 +109,20 @@ Below are some samples rules that limit access and validate data:
 }
 ```
 
+Storage Rules
+-------------
+```javascript
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    match /users/{userId}/{allPaths=**} {
+      allow read;
+      allow write: if request.auth.uid == userId;
+    }
+  }
+}
+```
+
 License
 -------
 

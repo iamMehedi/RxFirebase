@@ -2,7 +2,6 @@ package online.devliving.rxfirebasesample.fragment;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -19,13 +18,14 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.MutableData;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.Transaction;
+import com.trello.rxlifecycle.components.support.RxFragment;
 
 import online.devliving.rxfirebasesample.PostDetailActivity;
 import online.devliving.rxfirebasesample.R;
 import online.devliving.rxfirebasesample.models.Post;
 import online.devliving.rxfirebasesample.viewholder.PostViewHolder;
 
-public abstract class PostListFragment extends Fragment {
+public abstract class PostListFragment extends RxFragment {
 
     private static final String TAG = "PostListFragment";
 

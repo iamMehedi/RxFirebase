@@ -4,6 +4,11 @@
     tools:context=".MainActivity">
 
     <item
+        android:id="@+id/action_profile"
+        android:title="@string/menu_profile"
+        android:visible="true"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_logout"
         android:title="@string/menu_logout"
         android:visible="true"
